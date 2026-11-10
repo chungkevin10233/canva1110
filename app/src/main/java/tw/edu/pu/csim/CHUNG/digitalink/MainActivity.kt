@@ -25,13 +25,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.sp
 import tw.edu.pu.csim.CHUNG.digitalink.ui.theme.DigitalInkTheme
@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             DigitalInkTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MoveMinions(
+                    TestCanvas(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -53,25 +53,25 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MoveMinions(modifier: Modifier = Modifier) {
+fun TestCanvas(modifier: Modifier = Modifier) {
     val minionsImage: ImageBitmap = ImageBitmap.imageResource(id = R.drawable.minions)
     val textMeasurer = rememberTextMeasurer()
-
+    var path by remember { mutableStateOf(Path()) }
+    var running by remember { mutableStateOf(true) }
     var x by remember { mutableFloatStateOf(0f) }
     var y by remember { mutableFloatStateOf(0f) }
-    var running by remember { mutableStateOf(true) }
-    var path by remember { mutableStateOf(Path()) }
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-
-    val boxLeft = 300f
-    val boxTop = 200f
-    val boxSize = 200f
 
     LaunchedEffect(running) {
         while (running) {
             withFrameNanos {
                 x += 4f
                 y += 6f
+
+                if (x > canvasSize.width || y > canvasSize.height) {
+                    x = 0f
+                    y = 0f
+                }
             }
         }
     }
@@ -83,9 +83,7 @@ fun MoveMinions(modifier: Modifier = Modifier) {
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { offset ->
-                        if (offset.x in boxLeft..(boxLeft + boxSize) &&
-                            offset.y in boxTop..(boxTop + boxSize)
-                        ) {
+                        if (offset.x in 300f..500f && offset.y in 200f..400f) {
                             running = !running
                         }
                     }
@@ -109,28 +107,35 @@ fun MoveMinions(modifier: Modifier = Modifier) {
                 )
             }
     ) {
-        drawImage(
-            minionsImage,
-            dstOffset = IntOffset(x.toInt(), y.toInt()),
-            dstSize = IntSize(150, 153)
-        )
-
-        drawPath(path, Color.Black, 1f, Stroke(width = 10f))
+        drawCircle(Color.Magenta, 100f, Offset(100f, 100f))
 
         drawRect(
             Color.Blue,
-            Offset(boxLeft, boxTop),
-            Size(boxSize, boxSize),
+            Offset(300f, 200f),
+            Size(200f, 200f),
             style = Stroke(width = 5f)
         )
+
+        drawLine(
+            Color.Red,
+            Offset(200f, 800f),
+            Offset(size.width, size.height),
+            strokeWidth = 10f
+        )
+
+        translate(x, y) {
+            drawImage(minionsImage)
+        }
+
+        drawPath(path, Color.Green, 1f, Stroke(width = 10f))
 
         val label = if (running) "停止" else "開始"
         val layout = textMeasurer.measure(label, TextStyle(fontSize = 28.sp, color = Color.Blue))
         drawText(
             layout,
             topLeft = Offset(
-                boxLeft + (boxSize - layout.size.width) / 2f,
-                boxTop + (boxSize - layout.size.height) / 2f
+                300f + (200f - layout.size.width) / 2f,
+                200f + (200f - layout.size.height) / 2f
             )
         )
     }
